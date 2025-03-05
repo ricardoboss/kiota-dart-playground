@@ -4,7 +4,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_multipart/generated/api_client.dart';
-import 'package:microsoft_kiota_abstractions/microsoft_kiota_abstractions.dart';
+import 'package:dart_multipart/generated/models/sample_data.dart';
+import 'package:dart_multipart/generated/models/sample_data_bus_or_dog.dart';
+import 'package:dart_multipart/generated/models/sample_data_bus_or_dog_member1.dart';
 import 'package:microsoft_kiota_bundle/microsoft_kiota_bundle.dart';
 
 Future<void> runClient() async {
@@ -17,7 +19,14 @@ Future<void> runClient() async {
   final body = MultipartBody();
   body.addOrReplace("userId", "application/json", "123");
 
-  final response = await apiClient.upload.postAsync(body);
+  final bus =
+      SampleDataBusOrDogMember1()
+        ..color = "yellow"
+        ..numTires = 4;
+
+  final wrapper = SampleDataBusOrDog()..sampleDataBusOrDogMember1 = bus;
+  final data = SampleData()..busOrDog = wrapper;
+  final response = await apiClient.data.postAsync(data);
 
   print(response);
 }
