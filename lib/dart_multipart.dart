@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dart_multipart/generated/api_client.dart';
 import 'package:microsoft_kiota_abstractions/microsoft_kiota_abstractions.dart';
@@ -36,7 +38,22 @@ Future<void> runServer(
 
   startupHandle.complete();
 
-  await server.forEach((HttpRequest request) {
+  await server.forEach((HttpRequest request) async {
+    print("=== Incoming request:");
+    print('HTTP ${request.method} ${request.uri.path}');
+    request.headers.forEach((key, value) {
+      print('$key: ${value.join(', ')}');
+    });
+    print('');
+    final byteChunks = await request.toList();
+    final body = utf8.decode(
+      byteChunks
+          .fold(BytesBuilder(copy: false), (b, c) => b..add(c))
+          .takeBytes(),
+    );
+    print(body);
+    print('===');
+
     request.response.write('ok');
     request.response.close();
   });
