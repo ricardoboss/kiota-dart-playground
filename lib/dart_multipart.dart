@@ -54,7 +54,8 @@ Future<void> runServer(
     print(body);
     print('===');
 
-    request.response.write('ok');
+    request.response.headers.contentType = ContentType.json;
+    request.response.write('true');
     request.response.close();
   });
 

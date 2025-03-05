@@ -214,7 +214,7 @@ packages:
     description:
       path: "packages/microsoft_kiota_serialization_json"
       ref: "fixes/nested-intersection-type-serialization"
-      resolved-ref: b7173255c5b04ee08a9fdf4ab92c2173913a8a03
+      resolved-ref: b8e263d8e2ca96eaf76bd3274311795f2d6e1a71
       url: "https://github.com/ricardoboss/kiota-dart.git"
     source: git
     version: "0.0.4"
