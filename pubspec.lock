@@ -178,7 +178,7 @@ packages:
     source: hosted
     version: "1.16.0"
   microsoft_kiota_abstractions:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: microsoft_kiota_abstractions
       sha256: cc0cc3dd5f22333e67c4420844501fd5fd5df9e37c1986ac2ff82edcfbd448ed
@@ -189,18 +189,18 @@ packages:
     dependency: "direct main"
     description:
       name: microsoft_kiota_bundle
-      sha256: "5a9fc0585039aa35511c0e584f2aec19a1ecd80beff297b545fe607f37b47b90"
+      sha256: d845096a3c70b2b37a8f6ef854543a8df4f333ea16690a4f446ff72875b7e291
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.4"
+    version: "0.1.0"
   microsoft_kiota_http:
     dependency: transitive
     description:
       name: microsoft_kiota_http
-      sha256: ce23ac8252dcc8b0728944ecbaa67379a00686115296b5da3d70fbaa081a08c7
+      sha256: c8c589639f39fb8e5b4487fa35b46239c17451e27552639bfa659b507f6be774
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.4"
+    version: "0.0.5"
   microsoft_kiota_serialization_form:
     dependency: transitive
     description:
@@ -213,10 +213,10 @@ packages:
     dependency: transitive
     description:
       name: microsoft_kiota_serialization_json
-      sha256: "7ff9a3e208e365b1c6db563952fa4070c6b7a470691822168e6a6194855d493b"
+      sha256: "9e33e4b78fd8474b76cbae2baa9d1fd9aac953b0d8142bda494a3b3a6991a846"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.3"
+    version: "0.0.4"
   microsoft_kiota_serialization_multipart:
     dependency: transitive
     description:
@@ -445,10 +445,10 @@ packages:
     dependency: transitive
     description:
       name: web
-      sha256: cd3543bd5798f6ad290ea73d210f423502e71900302dde696f8bff84bf89a1cb
+      sha256: "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   web_socket:
     dependency: transitive
     description:

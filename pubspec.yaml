@@ -6,8 +6,7 @@ environment:
   sdk: ^3.7.0
 
 dependencies:
-  microsoft_kiota_bundle: ^0.0.4
-  microsoft_kiota_abstractions: ^0.0.2
+  microsoft_kiota_bundle: ^0.1.0
 
 dev_dependencies:
   lints: ^5.0.0
