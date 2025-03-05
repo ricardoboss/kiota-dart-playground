@@ -4,9 +4,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_multipart/generated/api_client.dart';
-import 'package:dart_multipart/generated/models/sample_data.dart';
-import 'package:dart_multipart/generated/models/sample_data_bus_or_dog.dart';
-import 'package:dart_multipart/generated/models/sample_data_bus_or_dog_member1.dart';
+import 'package:dart_multipart/generated/models/create_chat_completion_request.dart';
+import 'package:dart_multipart/generated/models/create_chat_completion_request_model.dart';
 import 'package:microsoft_kiota_bundle/microsoft_kiota_bundle.dart';
 
 Future<void> runClient() async {
@@ -16,17 +15,9 @@ Future<void> runClient() async {
   final adapter = DefaultRequestAdapter(authProvider: authProvider);
   final apiClient = ApiClient(adapter);
 
-  final body = MultipartBody();
-  body.addOrReplace("userId", "application/json", "123");
-
-  final bus =
-      SampleDataBusOrDogMember1()
-        ..color = "yellow"
-        ..numTires = 4;
-
-  final wrapper = SampleDataBusOrDog()..sampleDataBusOrDogMember1 = bus;
-  final data = SampleData()..busOrDog = wrapper;
-  final response = await apiClient.data.postAsync(data);
+  final model = CreateChatCompletionRequestModel()..string_ = "gpt-4o-latest";
+  final body = CreateChatCompletionRequest()..model = model;
+  final response = await apiClient.chat.completions.postAsync(body);
 
   print(response);
 }

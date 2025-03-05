@@ -11,3 +11,10 @@ dependencies:
 dev_dependencies:
   lints: ^5.0.0
   test: ^1.24.0
+
+dependency_overrides:
+  microsoft_kiota_serialization_json:
+    git:
+      url: https://github.com/ricardoboss/kiota-dart.git
+      path: packages/microsoft_kiota_serialization_json
+      ref: fixes/nested-intersection-type-serialization

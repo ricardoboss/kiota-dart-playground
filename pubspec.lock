@@ -210,12 +210,13 @@ packages:
     source: hosted
     version: "0.0.2"
   microsoft_kiota_serialization_json:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: microsoft_kiota_serialization_json
-      sha256: "9e33e4b78fd8474b76cbae2baa9d1fd9aac953b0d8142bda494a3b3a6991a846"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/microsoft_kiota_serialization_json"
+      ref: "fixes/nested-intersection-type-serialization"
+      resolved-ref: b7173255c5b04ee08a9fdf4ab92c2173913a8a03
+      url: "https://github.com/ricardoboss/kiota-dart.git"
+    source: git
     version: "0.0.4"
   microsoft_kiota_serialization_multipart:
     dependency: transitive
