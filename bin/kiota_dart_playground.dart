@@ -1,16 +1,20 @@
 import 'dart:async';
 
-import 'package:dart_multipart/dart_multipart.dart' as dart_multipart;
+import 'package:kiota_dart_playground/kiota_dart_playground.dart' as lib;
 
 Future<void> main(List<String> arguments) async {
   final startupHandle = Completer.sync();
   final closeHandle = Completer.sync();
-  final server = dart_multipart.runServer(startupHandle, closeHandle.future);
+  final server = lib.runServer(
+    startupHandle,
+    closeHandle.future,
+    lib.generateResponse,
+  );
 
   try {
     await startupHandle.future;
 
-    await dart_multipart.runClient();
+    await lib.runClient();
   } finally {
     closeHandle.complete();
 

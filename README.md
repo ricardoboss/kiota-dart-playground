@@ -1,4 +1,4 @@
-This repository is meant to used for testing [kiota](https://aka.ms/kiota) with [Dart](https://dart.dev/), specifically it's features for Multipart requests.
+This repository is meant to be used for testing [kiota](https://aka.ms/kiota) with [Dart](https://dart.dev/)
 
 ## Setup
 
@@ -7,7 +7,7 @@ You will need to have [Dart](https://dart.dev/) & [.NET](https://dotnet.microsof
 First, clone this repository:
 
 ```bash
-git clone https://github.com/ricardoboss/kiota-dart-multipart.git
+git clone https://github.com/ricardoboss/kiota-dart-playground.git
 ```
 
 Then, install the dependencies:
@@ -33,7 +33,7 @@ make run # or dart run
 
 To debug kiota, you can run do the following:
 
-Create a `.env` file with the following content:
+Create a `.env` file with this content:
 
 ```
 KIOTA_PATH=<path to your local kiota.csproj file>

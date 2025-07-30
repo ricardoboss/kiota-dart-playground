@@ -1,30 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:dart_multipart/generated/api_client.dart';
-import 'package:dart_multipart/generated/models/create_chat_completion_request.dart';
-import 'package:dart_multipart/generated/models/create_chat_completion_request_model.dart';
-import 'package:microsoft_kiota_bundle/microsoft_kiota_bundle.dart';
-
-Future<void> runClient() async {
-  print("Running Client");
-
-  final authProvider = AnonymousAuthenticationProvider();
-  final adapter = DefaultRequestAdapter(authProvider: authProvider);
-  final apiClient = ApiClient(adapter);
-
-  final model = CreateChatCompletionRequestModel()..string_ = "gpt-4o-latest";
-  final body = CreateChatCompletionRequest()..model = model;
-  final response = await apiClient.chat.completions.postAsync(body);
-
-  print(response);
-}
+import 'dart:typed_data' show BytesBuilder;
 
 Future<void> runServer(
   Completer startupHandle,
   Future<void> closeHandle,
+  Future<Map<String, dynamic>> Function() responseFactory,
 ) async {
   print("Running Server on port 4183");
 
@@ -54,8 +36,9 @@ Future<void> runServer(
     print(body);
     print('===');
 
+    var responseObj = await responseFactory();
     request.response.headers.contentType = ContentType.json;
-    request.response.write('true');
+    request.response.write(json.encode(responseObj));
     request.response.close();
   });
 

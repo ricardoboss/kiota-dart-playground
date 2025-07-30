@@ -1,6 +1,6 @@
-name: dart_multipart
-description: A sample command-line application.
+name: kiota_dart_playground
 version: 1.0.0
+publish_to: 'none'
 
 environment:
   sdk: ^3.7.0
@@ -9,12 +9,12 @@ dependencies:
   microsoft_kiota_bundle: ^0.1.0
 
 dev_dependencies:
-  lints: ^5.0.0
-  test: ^1.24.0
+  lints: any
+  test: ^1.26.3
 
 dependency_overrides:
-  microsoft_kiota_serialization_json:
-    git:
-      url: https://github.com/ricardoboss/kiota-dart.git
-      path: packages/microsoft_kiota_serialization_json
-      ref: fixes/nested-intersection-type-serialization
+#  microsoft_kiota_serialization_json:
+#    git:
+#      url: https://github.com/ricardoboss/kiota-dart.git
+#      path: packages/microsoft_kiota_serialization_json
+#      ref: fixes/nested-intersection-type-serialization
