@@ -11,11 +11,11 @@ Future<void> runClient() async {
 
   final response = await apiClient.workouts.getAsync();
 
-  print(response!.workoutDates!.single);
+  print(response!.photo);
 }
 
 Future<Map<String, dynamic>> generateResponse() async {
   return {
-    "workout_dates": ["2025-07-30T23:39:48.101Z"],
+    "photo": "YXNkYXNkYWRhc2Q=",
   };
 }

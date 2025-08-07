@@ -21,9 +21,8 @@ components:
     WorkoutDatesResponse:
       type: object
       properties:
-        workout_dates:
-          type: array
-          description: Array of workout dates in ISO format
-          items:
-            type: string
-            format: date-time
+        photo:
+          type: string
+          description: The base64-encoded contents of the file.
+          format: base64url
+          nullable: true
