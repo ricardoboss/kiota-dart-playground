@@ -1,28 +1,46 @@
 openapi: 3.1.0
 info:
-  title: Workout API
+  title: Playground API
   version: 1.0.0
-servers:
-  - url: https://api.example.com
 paths:
-  /workouts:
+  /user:
     get:
-      summary: Get workout dates
-      operationId: getWorkoutDates
+      summary: Get private/public user data
       responses:
         '200':
-          description: Successful response with workout dates
+          description: Returns user data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkoutDatesResponse'
+                oneOf:
+                  - "$ref": "#/components/schemas/private-user"
+                  - "$ref": "#/components/schemas/public-user"
+                discriminator:
+                  propertyName: view_type
+                  mapping:
+                    public: "#/components/schemas/public-user"
+                    private: "#/components/schemas/private-user"
 components:
   schemas:
-    WorkoutDatesResponse:
+    public-user:
       type: object
       properties:
-        photo:
+        view_type:
           type: string
-          description: The base64-encoded contents of the file.
-          format: base64url
-          nullable: true
+        login:
+          type: string
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    private-user:
+      type: object
+      properties:
+        view_type:
+          type: string
+        login:
+          type: string
+        id:
+          type: integer
+          format: int64

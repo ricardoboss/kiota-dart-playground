@@ -9,13 +9,16 @@ Future<void> runClient() async {
     ..baseUrl = "http://localhost:4183";
   final apiClient = ApiClient(adapter);
 
-  final response = await apiClient.workouts.getAsync();
+  final response = await apiClient.user.getAsync();
 
-  print(response!.photo);
+  print(response?.publicUser?.name);
 }
 
 Future<Map<String, dynamic>> generateResponse() async {
   return {
-    "photo": "YXNkYXNkYWRhc2Q=",
+    "id": 12354564687654,
+    "login": "some_user",
+    "view_type": "private",
+    "name": "Some User"
   };
 }
