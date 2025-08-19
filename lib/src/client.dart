@@ -6,12 +6,16 @@ Future<void> runClient() async {
 
   final authProvider = AnonymousAuthenticationProvider();
   final adapter = DefaultRequestAdapter(authProvider: authProvider)
-    ..baseUrl = "http://localhost:4183";
+    // ..baseUrl = "http://localhost:4183"
+  ;
   final apiClient = ApiClient(adapter);
 
-  final response = await apiClient.user.getAsync();
+  // final response = await apiClient.user.getAsync();
+  //
+  // print(response?.publicUser?.name);
 
-  print(response?.publicUser?.name);
+  final response = await apiClient.packages.byPackage('agent_dart').versions.withVersionTarGz('123').getAsync();
+  print(response);
 }
 
 Future<Map<String, dynamic>> generateResponse() async {

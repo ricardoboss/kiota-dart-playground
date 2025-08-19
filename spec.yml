@@ -1,46 +1,690 @@
 openapi: 3.1.0
 info:
-  title: Playground API
-  version: 1.0.0
+  title: Hosted Pub Repository API
+  version: "2.0.0"
+  description: |
+    REST API a hosted pub package repository must implement (Specification v2).
+    This specification models:
+    - List versions of a package
+    - Publishing flow (initiation step on the hosted repository)
+    - Package security advisories
+    - Deprecated endpoints for compatibility
+
+    Versioned response media type:
+    - Accept: application/vnd.pub.v2+json
+
+    Authentication:
+    - Authorization: Bearer <token> (opaque, RFC 6750 section 2.1 token charset)
+
+servers:
+  - url: https://pub.dev
+    description: Default public hosted pub repository
+  - url: https://some-server.com/prefix/pub
+    description: Example custom hosted-url
+  - url: https://pub.other-server.com/prefix
+    description: Example custom hosted-url
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Packages
+  - name: Publishing
+  - name: Advisories
+  - name: Compatibility (Deprecated)
+
 paths:
-  /user:
+  /api/packages/{package}:
     get:
-      summary: Get private/public user data
+      tags: [Packages]
+      summary: List all versions of a package
+      description: |
+        Returns package metadata including latest version and the full versions list.
+
+        Notes:
+        - `archive_url` may be a **temporary** signed URL and can include query parameters.
+        - To fetch an archive, follow redirects and download the **gzipped TAR**.
+        - If the `archive_url` host shares a prefix with the repository `<hosted-url>`,
+          clients should include the same `Authorization: Bearer <token>` header when
+          requesting the archive.
+        - `advisoriesUpdated` (if present) indicates the advisories endpoint is supported
+          and provides a timestamp when advisories last changed for this package.
+      parameters:
+        - $ref: '#/components/parameters/AcceptPubV2'
+        - $ref: '#/components/parameters/UserAgent'
+        - name: package
+          in: path
+          required: true
+          description: Package name
+          schema:
+            type: string
       responses:
         '200':
-          description: Returns user data
-          content:
-            application/json:
+          description: Package versions and metadata
+          headers:
+            Content-Type:
               schema:
-                oneOf:
-                  - "$ref": "#/components/schemas/private-user"
-                  - "$ref": "#/components/schemas/public-user"
-                discriminator:
-                  propertyName: view_type
-                  mapping:
-                    public: "#/components/schemas/public-user"
-                    private: "#/components/schemas/private-user"
+                type: string
+                const: application/vnd.pub.v2+json
+          content:
+            application/vnd.pub.v2+json:
+              schema:
+                $ref: '#/components/schemas/PackageInfo'
+        '4XX':
+          $ref: '#/components/responses/PubError'
+        '5XX':
+          $ref: '#/components/responses/PubError'
+
+  /api/packages/versions/new:
+    get:
+      tags: [Publishing]
+      summary: Initiate package publishing
+      description: |
+        Returns a `<multipart-upload-url>` and form `fields` for direct multipart/form-data
+        upload (e.g., to S3/GCS). After successful upload, the storage service responds
+        with `204 No Content` and `Location: <finalize-upload-url>`. The client then performs
+        `GET <finalize-upload-url>` (possibly to a different host). If `<finalize-upload-url>`
+        shares the `<hosted-url>` prefix, the client includes `Authorization` on that request.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AcceptPubV2'
+        - $ref: '#/components/parameters/UserAgent'
+      responses:
+        '200':
+          description: Upload initiation details
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                const: application/vnd.pub.v2+json
+          content:
+            application/vnd.pub.v2+json:
+              schema:
+                $ref: '#/components/schemas/UploadInitiation'
+              examples:
+                example:
+                  value:
+                    url: "https://storage.example.com/upload"
+                    fields:
+                      Policy: "base64-policy"
+                      X-Amz-Algorithm: "AWS4-HMAC-SHA256"
+                      X-Amz-Credential: "..."
+                      X-Amz-Date: "20220101T000000Z"
+                      X-Amz-Signature: "..."
+        '401':
+          description: Missing or invalid token
+          headers:
+            WWW-Authenticate:
+              description: Bearer challenge with message
+              schema:
+                type: string
+                example: Bearer realm="pub", message="Obtain a token from https://pub.example.com/manage-tokens"
+          content:
+            application/vnd.pub.v2+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Valid token but insufficient permissions
+          headers:
+            WWW-Authenticate:
+              description: Bearer challenge with message
+              schema:
+                type: string
+                example: Bearer realm="pub", message="User lacks permission to publish to this repository"
+          content:
+            application/vnd.pub.v2+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '4XX':
+          $ref: '#/components/responses/PubError'
+        '5XX':
+          $ref: '#/components/responses/PubError'
+
+  /api/packages/{package}/advisories:
+    get:
+      tags: [Advisories]
+      summary: List security advisories for a package
+      description: |
+        Returns a list of advisories in OSV format that affect the package.
+        Clients should use `affected[].versions` and ignore `affected[].ranges`.
+        If present, `database_specific.pub_display_url` may be shown to users.
+      parameters:
+        - $ref: '#/components/parameters/AcceptPubV2'
+        - $ref: '#/components/parameters/UserAgent'
+        - name: package
+          in: path
+          required: true
+          description: Package name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Advisories for the package
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                const: application/vnd.pub.v2+json
+          content:
+            application/vnd.pub.v2+json:
+              schema:
+                $ref: '#/components/schemas/AdvisoriesResponse'
+        '4XX':
+          $ref: '#/components/responses/PubError'
+        '5XX':
+          $ref: '#/components/responses/PubError'
+
+  /api/packages/{package}/versions/{version}:
+    get:
+      tags: [Compatibility (Deprecated)]
+      deprecated: true
+      summary: Inspect a specific version (Deprecated)
+      description: |
+        Deprecated since Dart 2.8.
+        Use **GET /api/packages/{package}** and follow `latest`/`versions` entries instead.
+      parameters:
+        - $ref: '#/components/parameters/AcceptPubV2'
+        - $ref: '#/components/parameters/UserAgent'
+        - name: package
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Version metadata
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                const: application/vnd.pub.v2+json
+          content:
+            application/vnd.pub.v2+json:
+              schema:
+                $ref: '#/components/schemas/VersionInspect'
+        '4XX':
+          $ref: '#/components/responses/PubError'
+        '5XX':
+          $ref: '#/components/responses/PubError'
+
+  /packages/{package}/versions/{version}.tar.gz:
+    get:
+      tags: [Compatibility (Deprecated)]
+      deprecated: true
+      summary: Download a specific version archive (Deprecated)
+      description: |
+        Deprecated since Dart 2.8.
+        Clients should instead download using `archive_url` from **GET /api/packages/{package}**.
+        Servers MAY respond with 30x redirects; clients MUST follow redirects.
+      parameters:
+        - name: Accept
+          in: header
+          required: false
+          description: Optional; octet-stream content negotiation for legacy clients.
+          schema:
+            type: string
+            enum: [application/octet-stream]
+        - $ref: '#/components/parameters/UserAgent'
+        - name: package
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Gzipped TAR archive
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Redirect to archive location
+          headers:
+            Location:
+              description: Target URL of the archive
+              schema:
+                type: string
+                format: uri
+        '4XX':
+          $ref: '#/components/responses/PubError'
+        '5XX':
+          $ref: '#/components/responses/PubError'
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Opaque bearer token per RFC 6750. Token charset must match:
+        `^[a-zA-Z0-9._~+/=-]+$`.
+        For security, tokens are used only over HTTPS.
+
+  parameters:
+    AcceptPubV2:
+      name: Accept
+      in: header
+      required: true
+      description: API versioned media type
+      schema:
+        type: string
+        const: application/vnd.pub.v2+json
+    UserAgent:
+      name: User-Agent
+      in: header
+      required: false
+      description: |
+        Client identifier. The Dart client uses: `Dart pub <sdk-version>`.
+        Custom clients should use a descriptive UA, ideally with a support URL.
+      schema:
+        type: string
+        example: my-pub-bot/1.2.3 (+https://github.com/organization/repo)
+
+  responses:
+    PubError:
+      description: Error response
+      headers:
+        Content-Type:
+          schema:
+            type: string
+            const: application/vnd.pub.v2+json
+      content:
+        application/vnd.pub.v2+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
   schemas:
-    public-user:
+    ErrorResponse:
       type: object
+      required: [error]
       properties:
-        view_type:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Machine-readable code
+            message:
+              type: string
+              description: Human-readable error explanation
+
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              description: Informational success message
+
+    UploadInitiation:
+      type: object
+      required: [url, fields]
+      properties:
+        url:
           type: string
-        login:
-          type: string
-        id:
-          type: integer
-          format: int64
+          format: uri
+          description: Multipart upload URL (may be temporary, may include query)
+        fields:
+          type: object
+          description: Form fields to include in the multipart POST (plus `file`)
+          additionalProperties:
+            type: string
+
+    PackageInfo:
+      type: object
+      required: [name, versions]
+      properties:
         name:
           type: string
-    private-user:
+        isDiscontinued:
+          type: boolean
+          default: false
+          description: False if omitted
+        replacedBy:
+          type: string
+          description: Package name that replaces this one (only if discontinued)
+        advisoriesUpdated:
+          type: string
+          format: date-time
+          description: Timestamp when advisories last changed for this package
+        latest:
+          $ref: '#/components/schemas/VersionEntry'
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/VersionEntry'
+
+    VersionEntry:
       type: object
+      required: [version, archive_url, pubspec]
       properties:
-        view_type:
+        version:
           type: string
-        login:
+          description: Semantic version string
+        retracted:
+          type: boolean
+          default: false
+          description: False if omitted
+        archive_url:
           type: string
+          format: uri
+          description: |
+            URL to gzipped TAR archive. May be temporary and include query string.
+            Clients MUST follow redirects to download.
+        archive_sha256:
+          type: string
+          description: Hex-encoded SHA-256 checksum of the archive (optional)
+          pattern: '^[A-Fa-f0-9]{64}$'
+        pubspec:
+          $ref: '#/components/schemas/Pubspec'
+        published:
+          type: string
+          format: date-time
+          description: Package publish date
+
+    Pubspec:
+      type: object
+      description: pubspec contents as JSON object
+      additionalProperties: true
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        homepage:
+          type: string
+          format: uri
+        repository:
+          type: string
+          format: uri
+        issue_tracker:
+          type: string
+          format: uri
+        topics:
+          type: array
+          items:
+            type: string
+        environment:
+          type: object
+          additionalProperties: true
+          properties:
+            sdk:
+              type: string
+            flutter:
+              type: string
+        dependencies:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Dependency'
+        dev_dependencies:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Dependency'
+        screenshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Screenshot'
+
+    Dependency:
+      oneOf:
+        - $ref: '#/components/schemas/VersionDependency'
+        - $ref: '#/components/schemas/PathDependency'
+        - $ref: '#/components/schemas/GitDependency'
+        - $ref: '#/components/schemas/SdkDependency'
+
+    VersionDependency:
+      type: string
+      description: A semver constraint like "^2.1.0"
+
+    PathDependency:
+      type: object
+      required: [ path ]
+      properties:
+        path:
+          type: string
+
+    GitDependency:
+      type: object
+      required: [repo]
+      properties:
+        repo:
+          type: string
+          format: uri
+        ref:
+          type: string
+          description: Optional git reference
+
+    SdkDependency:
+      type: object
+      required: [sdk]
+      properties:
+        sdk:
+          type: string
+
+    Screenshot:
+      type: object
+      required: [path]
+      properties:
+        description:
+          type: string
+        path:
+          type: string
+
+    VersionInspect:
+      type: object
+      required: [version, archive_url, pubspec]
+      properties:
+        version:
+          type: string
+        archive_url:
+          type: string
+          format: uri
+        pubspec:
+          type: object
+          additionalProperties: true
+
+    AdvisoriesResponse:
+      type: object
+      required: [advisories, advisoriesUpdated]
+      properties:
+        advisories:
+          type: array
+          description: List of OSV advisories affecting this package
+          items:
+            $ref: '#/components/schemas/OSV'
+        advisoriesUpdated:
+          type: string
+          format: date-time
+          description: Most recent timestamp when this result changed
+
+    OSV:
+      type: object
+      description: Full OSV (Open Source Vulnerabilities) schema object
+      additionalProperties: true
+      properties:
+        schema_version:
+          type: string
+          description: Version of the OSV schema
+          example: "1.6.0"
         id:
-          type: integer
-          format: int64
+          type: string
+          description: Unique identifier for the advisory
+          example: "OSV-2021-1234"
+        modified:
+          type: string
+          format: date-time
+          description: Last modification time
+        published:
+          type: string
+          format: date-time
+          description: Date when advisory was first published
+        withdrawn:
+          type: string
+          format: date-time
+          description: Date when advisory was withdrawn (if applicable)
+        aliases:
+          type: array
+          description: Alternative identifiers for the advisory
+          items:
+            type: string
+        related:
+          type: array
+          description: Related advisory IDs
+          items:
+            type: string
+        summary:
+          type: string
+          description: Short summary of the vulnerability
+        details:
+          type: string
+          description: Detailed description of the vulnerability
+        severity:
+          type: array
+          description: Severity scores for the vulnerability
+          items:
+            type: object
+            required: [type, score]
+            properties:
+              type:
+                type: string
+                enum: [CVSS_V2, CVSS_V3, CVSS_V4, other]
+              score:
+                type: string
+                description: Scoring string, e.g., CVSS vector
+        affected:
+          type: array
+          description: Affected packages and versions
+          items:
+            type: object
+            required: [package, versions]
+            properties:
+              package:
+                type: object
+                additionalProperties: true
+                properties:
+                  ecosystem:
+                    type: string
+                    description: Name of the package ecosystem
+                  name:
+                    type: string
+                    description: Package name
+                  purl:
+                    type: string
+                    description: Package URL (purl)
+              ranges:
+                type: array
+                description: Version ranges affected
+                items:
+                  type: object
+                  required: [type, events]
+                  properties:
+                    type:
+                      type: string
+                      description: Range type (e.g., SEMVER, ECOSYSTEM)
+                    repo:
+                      type: string
+                      description: Optional repository URL
+                    events:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          introduced:
+                            type: string
+                          fixed:
+                            type: string
+                          last_affected:
+                            type: string
+                          limit:
+                            type: string
+                    database_specific:
+                      type: object
+                      additionalProperties: true
+              versions:
+                type: array
+                description: Specific versions affected
+                items:
+                  type: string
+              database_specific:
+                type: object
+                additionalProperties: true
+                properties:
+                  source:
+                    type: string
+                    format: uri
+                  last_known_affected_version_range:
+                    type: string
+              ecosystem_specific:
+                type: object
+                additionalProperties: true
+        references:
+          type: array
+          description: References such as advisory pages, reports, etc.
+          items:
+            type: object
+            required: [type, url]
+            properties:
+              type:
+                type: string
+                enum: [ADVISORY, ARTICLE, REPORT, FIX, PACKAGE, EVIDENCE, WEB]
+              url:
+                type: string
+                format: uri
+        credits:
+          type: array
+          description: Credits for discovery, reporting, or fixing
+          items:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+              contact:
+                type: array
+                items:
+                  type: string
+                  format: uri
+              type:
+                type: string
+                description: Role of the credited party
+        database_specific:
+          type: object
+          additionalProperties: true
+          properties:
+            pub_display_url:
+              type: string
+              format: uri
+            nvd_published_at:
+              type: string
+              format: date-time
+            github_reviewed:
+              type: boolean
+            github_reviewed_at:
+              type: string
+              format: date-time
+            severity:
+              type: string
+              # enum: [HIGH]
+            cwe_ids:
+              type: array
+              items:
+                type: string

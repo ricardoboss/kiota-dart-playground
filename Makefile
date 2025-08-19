@@ -2,7 +2,7 @@ include .env
 
 KIOTA_ARGS := generate -d spec.yml -o lib/generated -l Dart
 
-gen:
+gen: restore
 	dotnet kiota $(KIOTA_ARGS)
 
 genproj:
@@ -13,3 +13,6 @@ watchproj:
 
 run:
 	dart run
+
+restore:
+	dotnet tool install microsoft.openapi.kiota
