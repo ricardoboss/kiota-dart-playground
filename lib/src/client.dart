@@ -14,8 +14,9 @@ Future<void> runClient() async {
   //
   // print(response?.publicUser?.name);
 
-  final response = await apiClient.packages.byPackage('agent_dart').versions.withVersionTarGz('123').getAsync();
-  print(response);
+  final response = await apiClient.api.packages.byPackage('werkbank').getAsync();
+
+  print(response?.name ?? 'unknown');
 }
 
 Future<Map<String, dynamic>> generateResponse() async {
