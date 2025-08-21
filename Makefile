@@ -15,4 +15,7 @@ run:
 	dart run
 
 restore:
+	dotnet tool restore
+
+install:
 	dotnet tool install microsoft.openapi.kiota
